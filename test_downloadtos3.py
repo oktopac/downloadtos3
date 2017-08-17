@@ -33,5 +33,11 @@ class TestCreateS3Key(unittest.TestCase):
         key = handler.create_s3_key(web_location, s3_location)
         self.assertEqual("/fdsfds/dssacascasxas/baa.html", key)
 
+class TestGetSize(unittest.TestCase):
+    def test_returnsint(self):
+        ret = handler.get_web_filesize("http://www.bbc.com")
+        self.assertEqual(int, type(ret))
+
+
 if __name__ == '__main__':
     unittest.main()

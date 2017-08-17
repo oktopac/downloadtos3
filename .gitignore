@@ -1,5 +1,6 @@
 # Distribution / packaging
 .Python
+vendored/
 *.pyc
 env/
 build/
