@@ -1,6 +1,19 @@
 import boto3
-import urllib.request
-from urllib.parse import urlparse
+import urllib
+from urlparse import urlparse
+
+def create_s3_key(web_location, s3_location, filename=None):
+    if filename is None:
+        filename = urlparse(web_location).path.split('/')[-1]
+
+    if len(filename) == 0:
+        raise Exception("No filename provided")
+
+    if s3_location == None or s3_location == '/':
+        return filename
+
+    s3key = '/'.join([s3_location.rstrip('/'), filename])
+    return s3key
 
 def simpleupload(event, context):
     if not type(event) == dict:
@@ -13,16 +26,16 @@ def simpleupload(event, context):
     WEB_LOCATION = event['web_location']
     S3_BUCKET = event['s3_bucket']
     S3_LOCATION = event.get('s3_location', '/')
+    FILENAME = event.get('filename')
 
-    return upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_LOCATION)
+    S3_KEY = create_s3_key(WEB_LOCATION, S3_LOCATION, filename=FILENAME)
 
-def upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_LOCATION):
-    filename = WEB_LOCATION
-    S3_FILENAME = urlparse(WEB_LOCATION).path.split('/')[-1]
+    ret = upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY)
 
-    S3_KEY = '/'.join([S3_LOCATION, S3_FILENAME])
+    return {"ret": ret, "Decription": "Uploaded %s to s3://%s/%s" % (WEB_LOCATION, S3_BUCKET, S3_KEY)}
 
-    response = urllib.request.urlopen(WEB_LOCATION)
+def upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY):
+    response = urllib.urlopen(WEB_LOCATION)
 
     s3 = boto3.resource('s3')
     bucket = s3.Bucket(S3_BUCKET)
@@ -30,4 +43,4 @@ def upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_LOCATION):
 
     obj.upload_fileobj(response.fp)
 
-    return {}
+    return None

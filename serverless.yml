@@ -2,7 +2,7 @@ service: aws-python # NOTE: update this with your service name
 
 provider:
   name: aws
-  runtime: python3.6
+  runtime: python2.7
   iamRoleStatements:
     - Effect: "Allow"
       Action:
