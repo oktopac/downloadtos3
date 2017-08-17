@@ -13,3 +13,7 @@ functions:
   simpleupload:
     handler: handler.simpleupload
     timeout: 300
+
+  multipartupload:
+    handler: handler.multipartupload
+    timeout: 300

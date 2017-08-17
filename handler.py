@@ -16,6 +16,12 @@ def create_s3_key(web_location, s3_location, filename=None):
     return s3key
 
 def simpleupload(event, context):
+    return upload(event, context, simple_upload_web_s3)
+
+def multipartupload(event, context):
+    return upload(event, context, multipart_upload_web_s3)
+
+def upload(event, context, handler):
     if not type(event) == dict:
         return {"error": "you need to pass me json"}
 
@@ -30,11 +36,22 @@ def simpleupload(event, context):
 
     S3_KEY = create_s3_key(WEB_LOCATION, S3_LOCATION, filename=FILENAME)
 
-    ret = upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY)
+    ret = handler(WEB_LOCATION, S3_BUCKET, S3_KEY)
 
     return {"ret": ret, "Decription": "Uploaded %s to s3://%s/%s" % (WEB_LOCATION, S3_BUCKET, S3_KEY)}
 
-def upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY):
+def simple_upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY):
+    response = urllib.urlopen(WEB_LOCATION)
+
+    s3 = boto3.resource('s3')
+    bucket = s3.Bucket(S3_BUCKET)
+    obj = bucket.Object(S3_KEY)
+
+    obj.upload_fileobj(response.fp)
+
+    return None
+
+def multipart_upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY):
     response = urllib.urlopen(WEB_LOCATION)
 
     s3 = boto3.resource('s3')
