@@ -71,7 +71,7 @@ def simple_upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY):
 
     return None
 
-def multipart_upload_web_s3(web_location, S3_BUCKET, S3_KEY,
+def multipart_upload_web_s3(web_location, s3_bucket, s3_key,
         chunk_size=DEFAULT_CHUNK_SIZE):
     if chunk_size < MIN_CHUNK_SIZE:
         raise Exception("Chunk size must be greater than 5MB")
@@ -81,25 +81,44 @@ def multipart_upload_web_s3(web_location, S3_BUCKET, S3_KEY,
     length = int(response.headers['content-length'])
     logging.info(length)
 
+    # How many parts do we need?
+    n_parts = (length - (length % chunk_size)) / chunk_size + 1
+    logging.info("We are downloading %d parts" % n_parts)
+
     # Open a multipart object
     parts = []
-    ret = client.create_multipart_upload(Bucket=S3_BUCKET, Key=S3_KEY)
+    ret = client.create_multipart_upload(Bucket=s3_bucket, Key=s3_key)
     upload_id = ret['UploadId']
     logging.info(ret)
 
-    # Loop until we have all the chunks
-    while len(parts) * chunk_size < length:
-        logging.info("Downloading chunk %d of %d" % (len(parts) + 1,
-            (length - (length % chunk_size)) / chunk_size  + 1))
-        data = download_part(web_location, len(parts) + 1, chunk_size)
-        logging.info("Got data of length %d" % len(data))
-        parts = upload_part(S3_BUCKET, S3_KEY, data, upload_id, parts)
-
-    logging.info(parts)
-    client.complete_multipart_upload(Bucket=S3_BUCKET, Key=S3_KEY,
-        UploadId=upload_id, MultipartUpload={'Parts':parts})
+    # Call recursive multipart upload function
+    multipart_upload_web_s3_part(web_location, s3_bucket, s3_key,
+        chunk_size, parts, n_parts, upload_id)
 
     return None
+
+def multipart_upload_web_s3_part(web_location, s3_bucket, s3_key, chunk_size,
+        parts, n_parts, upload_id):
+
+    logging.info("Downloading chunk %d of %d" % (len(parts) + 1,
+        n_parts))
+    data = download_part(web_location, len(parts) + 1, chunk_size)
+    logging.info("Got data of length %d" % len(data))
+    parts = upload_part(s3_bucket, s3_key, data, upload_id, parts)
+
+    # Check to see if we have all the data
+    is_complete = len(parts) >= n_parts
+
+    logging.info("Got %d parts, we %s complete" % (len(parts), "are" if is_complete else "aren't"))
+
+    if is_complete:
+        # Once done, complete upload
+        client.complete_multipart_upload(Bucket=s3_bucket, Key=s3_key,
+            UploadId=upload_id, MultipartUpload={'Parts':parts})
+        return True
+    else:
+        return multipart_upload_web_s3_part(web_location, s3_bucket, s3_key,
+            chunk_size, parts, n_parts, upload_id)
 
 def upload_part(s3_bucket, s3_key, content, upload_id, parts):
     part_number = len(parts) + 1

@@ -12,8 +12,8 @@ provider:
 functions:
   simpleupload:
     handler: handler.simpleupload
-    timeout: 300
+    timeout: 30
 
   multipartupload:
     handler: handler.multipartupload
-    timeout: 300
+    timeout: 30
