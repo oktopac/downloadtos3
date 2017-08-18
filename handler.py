@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, './vendored')
+
 import boto3
 import urllib
 from urlparse import urlparse
@@ -51,7 +54,11 @@ def upload(event, context, handler):
 
     ret = handler(WEB_LOCATION, S3_BUCKET, S3_KEY)
 
-    return {"ret": ret, "Decription": "Uploaded %s to s3://%s/%s" % (WEB_LOCATION, S3_BUCKET, S3_KEY)}
+    return {
+        "ret": ret,
+        "Decription":
+            "Uploaded %s to s3://%s/%s" % (WEB_LOCATION, S3_BUCKET, S3_KEY)
+        }
 
 def simple_upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY):
     response = urllib.urlopen(WEB_LOCATION)
@@ -64,7 +71,8 @@ def simple_upload_web_s3(WEB_LOCATION, S3_BUCKET, S3_KEY):
 
     return None
 
-def multipart_upload_web_s3(web_location, S3_BUCKET, S3_KEY, chunk_size=DEFAULT_CHUNK_SIZE):
+def multipart_upload_web_s3(web_location, S3_BUCKET, S3_KEY,
+        chunk_size=DEFAULT_CHUNK_SIZE):
     if chunk_size < MIN_CHUNK_SIZE:
         raise Exception("Chunk size must be greater than 5MB")
 
@@ -95,8 +103,12 @@ def multipart_upload_web_s3(web_location, S3_BUCKET, S3_KEY, chunk_size=DEFAULT_
 
 def upload_part(s3_bucket, s3_key, content, upload_id, parts):
     part_number = len(parts) + 1
-    ret = client.upload_part(Bucket=s3_bucket, Key=s3_key, PartNumber=part_number,
-        UploadId=upload_id, Body=content)
+    ret = client.upload_part(Bucket=s3_bucket,
+        Key=s3_key,
+        PartNumber=part_number,
+        UploadId=upload_id,
+        Body=content
+        )
     logging.info(ret)
     parts.append({'ETag': ret['ETag'], 'PartNumber': part_number})
 
