@@ -7,6 +7,7 @@ from urlparse import urlparse
 import urllib2
 import requests
 import logging
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -17,6 +18,7 @@ VERIFY_SSL = True
 
 # The s3 client
 client = boto3.client('s3')
+lambda_client = boto3.client('lambda')
 
 def create_s3_key(web_location, s3_location, filename=None):
     if filename is None:
@@ -92,10 +94,44 @@ def multipart_upload_web_s3(web_location, s3_bucket, s3_key,
     logging.info(ret)
 
     # Call recursive multipart upload function
-    multipart_upload_web_s3_part(web_location, s3_bucket, s3_key,
+    invoke_multipart_lambda(web_location, s3_bucket, s3_key,
         chunk_size, parts, n_parts, upload_id)
 
     return None
+
+def invoke_multipart_lambda(web_location, s3_bucket, s3_key, chunk_size,
+        parts, n_parts, upload_id):
+    return lambda_client.invoke(
+            FunctionName="multipart_upload_web_s3_part_lambda",
+            InvocationType="Event",
+            Payload=json.dumps(
+                {
+                "web_location": web_location,
+                "s3_bucket": s3_bucket,
+                "s3_key": s3_key,
+                "chunk_size": chunk_size,
+                "parts": parts,
+                "n_parts": n_parts,
+                "upload_id": upload_id
+                }
+            )
+        )
+
+def multipart_upload_web_s3_part_lambda(event, content):
+    import time
+    time.sleep(5)
+    ret = multipart_upload_web_s3_part(
+        event['web_location'],
+        event['s3_bucket'],
+        event['s3_key'],
+        event['chunk_size'],
+        event['parts'],
+        event['n_parts'],
+        event['upload_id']
+    )
+
+    return ret
+
 
 def multipart_upload_web_s3_part(web_location, s3_bucket, s3_key, chunk_size,
         parts, n_parts, upload_id):
@@ -117,7 +153,7 @@ def multipart_upload_web_s3_part(web_location, s3_bucket, s3_key, chunk_size,
             UploadId=upload_id, MultipartUpload={'Parts':parts})
         return True
     else:
-        return multipart_upload_web_s3_part(web_location, s3_bucket, s3_key,
+        return invoke_multipart_lambda(web_location, s3_bucket, s3_key,
             chunk_size, parts, n_parts, upload_id)
 
 def upload_part(s3_bucket, s3_key, content, upload_id, parts):
