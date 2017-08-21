@@ -1,0 +1,18 @@
+{
+  "manifest_version": 2,
+  "name": "Download to S3",
+  "short_name": "D2S3",
+  "description": "Dowloads the link to S3",
+  "version": "0.0.1",
+  "minimum_chrome_version": "38",
+  "permissions": [
+    "contextMenus",
+    "tabs",
+    "storage"
+  ],
+  "content_security_policy": "script-src 'self' https://sdk.amazonaws.com; object-src 'self'",
+  "options_ui": {
+    "page": "dialog.html"
+  },
+  "background": {"page": "background.html"}
+}
