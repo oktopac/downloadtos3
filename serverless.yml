@@ -8,20 +8,39 @@ provider:
       Action:
         - "s3:*"
       Resource: "*"
-    - Effect: "Allow"
-      Action:
-        - "lambda:invoke"
-      Resource: "*"
+    # - Effect: "Allow"
+    #   Action:
+    #     - "lambda:invoke"
+    #   Resource: "*"
 
 functions:
   simpleupload:
     handler: handler.simpleupload
     timeout: 300
 
-  # multipartupload:
-  #   handler: handler.multipartupload
-  #   timeout: 30
-  #
-  # multipart_upload_web_s3_part:
-  #   handler: handler.multipart_upload_web_s3_part_lambda
-  #   timeout: 30
+resources:
+  Resources:
+    UploadBucket:
+      Type: "AWS::S3::Bucket"
+    AccessKeys:
+      Type: "AWS::IAM::AccessKey"
+      Properties:
+        UserName: { "Ref": "DownloadToS3User" }
+    DownloadToS3User:
+      Type: AWS::IAM::User
+      Properties:
+        Policies:
+        - PolicyName: ExecuteLambda
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+            - Effect: Allow
+              Action:
+              - lambda:InvokeFunction
+              Resource:
+              - { "Fn::GetAtt": ["SimpleuploadLambdaFunction", "Arn" ] }
+  Outputs:
+    AccessKey:
+      Value: { "Ref": "AccessKeys" }
+    SecretKey:
+      Value: { "Fn::GetAtt": ["AccessKeys", "SecretAccessKey" ] }
