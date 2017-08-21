@@ -1,4 +1,4 @@
-service: aws-python # NOTE: update this with your service name
+service: download-to-s3
 
 provider:
   name: aws
@@ -8,10 +8,6 @@ provider:
       Action:
         - "s3:*"
       Resource: "*"
-    # - Effect: "Allow"
-    #   Action:
-    #     - "lambda:invoke"
-    #   Resource: "*"
 
 functions:
   simpleupload:
