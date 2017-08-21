@@ -16,12 +16,12 @@ provider:
 functions:
   simpleupload:
     handler: handler.simpleupload
-    timeout: 30
+    timeout: 300
 
-  multipartupload:
-    handler: handler.multipartupload
-    timeout: 30
-
-  multipart_upload_web_s3_part:
-    handler: handler.multipart_upload_web_s3_part_lambda
-    timeout: 30
+  # multipartupload:
+  #   handler: handler.multipartupload
+  #   timeout: 30
+  #
+  # multipart_upload_web_s3_part:
+  #   handler: handler.multipart_upload_web_s3_part_lambda
+  #   timeout: 30
